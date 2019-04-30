@@ -9,6 +9,8 @@ namespace ScsContentMigrator.Models
 	public class PullItemModel
 	{
 		public List<string> Ids;
+		public List<string> IdsToExclude;
+		public List<string> IdsAndChildrenToExclude;
 		public string Database;
 		public string Server;
 		public bool Children;

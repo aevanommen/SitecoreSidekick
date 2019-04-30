@@ -10,6 +10,7 @@ namespace ScsContentMigrator.Core.Interface
 	{
 		bool Completed { get; }
 		void StartGatheringItems(IEnumerable<Guid> rootIds, int threads, bool getChildren, string server, CancellationToken cancellationToken, bool ignoreRevId);
+		void StartGatheringItems(IEnumerable<Guid> rootIds, IEnumerable<Guid> idsToExclude, IEnumerable<Guid> idsAndChildrenToExclude, int threads, bool getChildren, string server, CancellationToken cancellationToken, bool ignoreRevId);
 		BlockingCollection<IItemData> ItemsToInstall { get; }
 	}
 }

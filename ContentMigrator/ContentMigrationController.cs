@@ -71,7 +71,6 @@ namespace ScsContentMigrator
 					return Content(reader.ReadToEnd());
 				}
 			}
-
 		}
 
 		[MchapOrLoggedIn]
@@ -82,58 +81,70 @@ namespace ScsContentMigrator
 
 			using (new SecurityDisabler())
 			{
-
-				IItemData item = _sitecore.GetItemData(guid);
-				var localRev = _sitecore.GetItemAndChildrenRevision(guid);
-				List<Guid> GrandChildren = new List<Guid>();
+				List<Guid> grandChildren = new List<Guid>();
 				var items = new List<KeyValuePair<Guid, string>>();
-				if (data.Rev == null || !data.Rev.ContainsKey(item.Id) || data.Rev[item.Id] != localRev[item.Id])
-				{
-					using (var stream = new MemoryStream())
-					{
-						_yamlSerializationService.WriteSerializedItem(item, stream);
-						stream.Seek(0, SeekOrigin.Begin);
 
-						using (var reader = new StreamReader(stream))
-						{
-							items.Add(new KeyValuePair<Guid, string>(item.Id, reader.ReadToEnd()));
-						}
-					}
-				}
-				else
+				if (data.IdsAndChildrenToExclude == null)
 				{
-					items.Add(new KeyValuePair<Guid, string>(item.Id, null));
+					data.IdsAndChildrenToExclude = new List<Guid>();
 				}
-				if (item.Path.StartsWith("/sitecore/media library/"))
+
+				if (!data.IdsAndChildrenToExclude.Contains(guid))
 				{
-					GrandChildren.AddRange(_sitecore.GetChildren(item).Select(x => x.Id));
-				}
-				else
-				{
-					items.AddRange(_sitecore.GetChildren(item).Select(x =>
+					IItemData item = _sitecore.GetItemData(guid);
+					var localRev = _sitecore.GetItemAndChildrenRevision(guid);
+
+					if (data.Rev == null || !data.Rev.ContainsKey(item.Id) || data.Rev[item.Id] != localRev[item.Id])
 					{
-						GrandChildren.AddRange(_sitecore.GetChildren(x).Select(c => c.Id));
-						if (data.Rev != null && data.Rev.ContainsKey(x.Id) && localRev.ContainsKey(x.Id) && data.Rev[x.Id] == localRev[x.Id])
-						{
-							return new KeyValuePair<Guid, string>(x.Id, null);
-						}
 						using (var stream = new MemoryStream())
 						{
-							_yamlSerializationService.WriteSerializedItem(x, stream);
+							_yamlSerializationService.WriteSerializedItem(item, stream);
 							stream.Seek(0, SeekOrigin.Begin);
 
 							using (var reader = new StreamReader(stream))
 							{
-								return new KeyValuePair<Guid, string>(x.Id, reader.ReadToEnd());
+								items.Add(new KeyValuePair<Guid, string>(item.Id, reader.ReadToEnd()));
 							}
 						}
+					}
+					else
+					{
+						items.Add(new KeyValuePair<Guid, string>(item.Id, null));
+					}
 
-					}));
+					if (item.Path.StartsWith("/sitecore/media library/"))
+					{
+						grandChildren.AddRange(_sitecore.GetChildren(item).Where(c => !data.IdsAndChildrenToExclude.Contains(c.Id)).Select(x => x.Id));
+					}
+					else
+					{
+						items.AddRange(_sitecore.GetChildren(item).Where(c => !data.IdsAndChildrenToExclude.Contains(c.Id)).Select(x =>
+						{
+							grandChildren.AddRange(_sitecore.GetChildren(x).Select(c => c.Id));
+
+							if (data.Rev != null && data.Rev.ContainsKey(x.Id) && localRev.ContainsKey(x.Id) && data.Rev[x.Id] == localRev[x.Id])
+							{
+								return new KeyValuePair<Guid, string>(x.Id, null);
+							}
+
+							using (var stream = new MemoryStream())
+							{
+								_yamlSerializationService.WriteSerializedItem(x, stream);
+								stream.Seek(0, SeekOrigin.Begin);
+
+								using (var reader = new StreamReader(stream))
+								{
+									return new KeyValuePair<Guid, string>(x.Id, reader.ReadToEnd());
+								}
+							}
+						}));
+					}
 				}
+
 				return ScsJson(new ChildrenItemDataModel
 				{
 					Items = items,
-					GrandChildren = GrandChildren
+					GrandChildren = grandChildren
 				});
 			}
 		}

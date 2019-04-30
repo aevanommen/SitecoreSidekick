@@ -56,10 +56,10 @@ namespace ScsContentMigrator.Services
 			return DeserializeYaml(yaml, id);
 		}
 
-		public ChildrenItemDataModel GetRemoteItemDataWithChildren(Guid id, string server, Dictionary<Guid, string> rev = null)
+		public ChildrenItemDataModel GetRemoteItemDataWithChildren(Guid id, string server, Dictionary<Guid, string> rev = null, List<Guid> idsAndChildrenToExclude = null)
 		{
 			string url = $"{server}/scs/cm/cmgetitemyamlwithchildren.scsvc";
-			string parameters = _jsonSerializationService.SerializeObject(new {id, rev});
+			string parameters = _jsonSerializationService.SerializeObject(new {id, rev, idsAndChildrenToExclude });
 			string json = MakeRequest(url, parameters);
 			return _jsonSerializationService.DeserializeObject<ChildrenItemDataModel>(json);
 		}

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ScsContentMigrator.Core.Interface
 {
-	interface IChecksumManager
+	public interface IChecksumManager
 	{
 		void RegenerateChecksum(object sender = null, EventArgs args = null);
 		void StartChecksumTimer();

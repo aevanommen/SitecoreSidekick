@@ -20,6 +20,8 @@ namespace ScsContentMigrator.Core
 	{
 		internal readonly BlockingCollection<IItemData> GatheredRemoteItems = new BlockingCollection<IItemData>();
 		internal readonly BlockingCollection<Guid> ProcessingIds = new BlockingCollection<Guid>();
+		internal readonly List<Guid> IdsToExclude = new List<Guid>();
+		internal readonly List<Guid> IdsAndChildrenToExclude = new List<Guid>();
 		private readonly IRemoteContentService _remoteContent;
 		private readonly IYamlSerializationService _yamlSerializationService;
 		private readonly ILoggingService _log;
@@ -40,11 +42,28 @@ namespace ScsContentMigrator.Core
 		public bool Completed { get; private set; }
 
 		public void StartGatheringItems(IEnumerable<Guid> rootIds, int threads, bool getChildren, string server, CancellationToken cancellationToken, bool ignoreRevId)
+		{
+			this.StartGatheringItems(rootIds, new Guid[] { }, new Guid[] { }, threads, getChildren, server, cancellationToken, ignoreRevId);
+		}
+
+		public void StartGatheringItems(
+			IEnumerable<Guid> rootIds,
+			IEnumerable<Guid> idsToExclude,
+			IEnumerable<Guid> idsAndChildrenToExclude,
+			int threads, 
+			bool getChildren, 
+			string server, 
+			CancellationToken cancellationToken, 
+			bool ignoreRevId)
 		{			
 			foreach (Guid id in rootIds)
 			{
 				ProcessingIds.Add(id);
 			}
+
+			this.IdsToExclude.AddRange(idsToExclude);
+			this.IdsAndChildrenToExclude.AddRange(idsAndChildrenToExclude);
+
 			for (int i = 0; i < threads; i++)
 			{
 				Task.Run(() =>
@@ -66,13 +85,24 @@ namespace ScsContentMigrator.Core
 						break;
 					}
 					lock (_locker)
+					{
 						_processing++;
-					ChildrenItemDataModel remoteContentItem = _remoteContent.GetRemoteItemDataWithChildren(id, server, ignoreRevId ? null : _sitecore.GetItemAndChildrenRevision(id));
+					}
+
+					var rev = ignoreRevId ? null : _sitecore.GetItemAndChildrenRevision(id);
+					ChildrenItemDataModel remoteContentItem = _remoteContent.GetRemoteItemDataWithChildren(id, server, rev, IdsAndChildrenToExclude);
+
 					foreach (var item in (getChildren ? remoteContentItem.Items : remoteContentItem.Items.Where(x => x.Key == id)))
 					{
 						if (item.Value != null)
 						{
 							IItemData itemData = _yamlSerializationService.DeserializeYaml(item.Value, item.Key.ToString());
+
+							if (IdsToExclude.Contains(item.Key))
+							{
+								continue;
+							}
+
 							GatheredRemoteItems.Add(itemData, cancellationToken);
 						}
 						else

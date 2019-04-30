@@ -46,12 +46,27 @@ namespace ScsContentMigrator.Core
 					}
 				}
 			}
+
 			if (model.RemoveLocalNotInRemote)
 			{
 				_installer.SetupTrackerForUnwantedLocalItems(model.Ids.Select(Guid.Parse));
 			}
-			_puller.StartGatheringItems(model.Ids.Select(Guid.Parse), _registration.GetScsRegistration<ContentMigrationRegistration>()?.RemoteThreads ?? 1, model.Children, model.Server, _cancellation.Token, model.IgnoreRevId);
-			_installer.StartInstallingItems(model, _puller.ItemsToInstall, _registration.GetScsRegistration<ContentMigrationRegistration>()?.WriterThreads ?? 1, _cancellation.Token);
+
+			_puller.StartGatheringItems(
+				model.Ids.Select(Guid.Parse),
+				model.IdsToExclude == null ? new Guid[] { } : model.IdsToExclude.Select(Guid.Parse),
+				model.IdsAndChildrenToExclude == null ? new Guid[] { } : model.IdsAndChildrenToExclude.Select(Guid.Parse),
+				_registration.GetScsRegistration<ContentMigrationRegistration>()?.RemoteThreads ?? 1, 
+				model.Children, 
+				model.Server, 
+				_cancellation.Token, 
+				model.IgnoreRevId);
+
+			_installer.StartInstallingItems(
+				model, 
+				_puller.ItemsToInstall,
+				_registration.GetScsRegistration<ContentMigrationRegistration>()?.WriterThreads ?? 1, 
+				_cancellation.Token);
 		}
 
 		public void CancelMigration()
