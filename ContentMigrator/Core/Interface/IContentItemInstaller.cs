@@ -2,9 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Rainbow.Model;
-using ScsContentMigrator.Args;
 using ScsContentMigrator.Models;
 
 namespace ScsContentMigrator.Core.Interface
@@ -17,6 +15,7 @@ namespace ScsContentMigrator.Core.Interface
 		bool Completed { get; }
 		IEnumerable<dynamic> GetItemLogEntries(int lineToStartFrom);
 		IEnumerable<string> GetAuditLogEntries(int lineToStartFrom);
+		IDictionary<string, int> Statistics { get; }
 		ContentMigrationOperationStatus Status { get; }
 	}
 }

@@ -19,6 +19,8 @@ namespace ScsContentMigrator.Core
 		private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
 		private PullItemModel _model;
 		public ContentMigrationOperationStatus Status => _installer.Status;
+		public IDictionary<string, int> Statistics =>_installer.Statistics;
+
 		public ContentMigration()
 		{
 			_remoteContent = Bootstrap.Container.Resolve<IRemoteContentService>();

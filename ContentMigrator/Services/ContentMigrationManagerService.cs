@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Rainbow.Model;
-using ScsContentMigrator.Args;
 using ScsContentMigrator.Core;
 using ScsContentMigrator.Core.Interface;
 using ScsContentMigrator.Models;
@@ -63,6 +58,13 @@ namespace ScsContentMigrator.Services
 			IContentMigration ret;
 			_migrations.TryGetValue(operationId, out ret);
 			return ret?.GetItemLogEntries(fromLineNumber) ?? new List<dynamic>();
+		}
+
+		public IDictionary<string, int> GetStatistics(string operationId)
+		{
+			IContentMigration ret;
+			_migrations.TryGetValue(operationId, out ret);
+			return ret?.Statistics ?? new Dictionary<string, int>();
 		}
 	}
 }

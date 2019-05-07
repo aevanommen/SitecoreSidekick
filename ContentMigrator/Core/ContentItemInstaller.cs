@@ -42,10 +42,11 @@ namespace ScsContentMigrator.Core
 		internal ConcurrentHashSet<Guid> AllowedItems = new ConcurrentHashSet<Guid>();
 		internal ConcurrentHashSet<Guid> Errors = new ConcurrentHashSet<Guid>();
 		internal ConcurrentHashSet<Guid> CurrentlyProcessing = new ConcurrentHashSet<Guid>();
+		internal Dictionary<string, int> OperationStatistics = new Dictionary<string, int>();
 		internal int WaitForParentDelay = 50;
 		private readonly object _locker = new object();
 		public ContentMigrationOperationStatus Status { get; } = new ContentMigrationOperationStatus();
-
+		public IDictionary<string, int> Statistics { get => this.OperationStatistics; }
 
 		public ContentItemInstaller()
 		{
@@ -77,6 +78,7 @@ namespace ScsContentMigrator.Core
 				{
 					var data = _sitecore.GetItemData(id);
 					_logger.BeginEvent(data, LogStatus.Recycle, _sitecore.GetIconSrc(data), false);
+					this.UpdateStatistics(LogStatus.Recycle);
 					string status = $"{DateTime.Now:h:mm:ss tt} [RECYCLED] Recycled old item {data?.Name} - {id}";
 					_logger.LoggerOutput.Add(status);
 					if (data != null)
@@ -88,6 +90,7 @@ namespace ScsContentMigrator.Core
 				catch (Exception e)
 				{
 					_logger.BeginEvent(new ErrorItemData() { Name = id.ToString("B"), Path = e.ToString() }, LogStatus.Error, "", false);
+					this.UpdateStatistics(LogStatus.Error);
 				}
 			}
 
@@ -274,20 +277,39 @@ namespace ScsContentMigrator.Core
 					if (results.AreEqual)
 					{
 						_logger.BeginEvent(remoteData, LogStatus.Skipped, GetSrc(_sitecore.GetIconSrc(localData)), false);
+						this.UpdateStatistics(LogStatus.Skipped);
 					}
 					else if (results.IsMoved)
+					{
 						_logger.BeginEvent(remoteData, LogStatus.Moved, GetSrc(_sitecore.GetIconSrc(localData)), false);
+						this.UpdateStatistics(LogStatus.Moved);
+					}
 					else if (results.IsRenamed)
+					{
 						_logger.BeginEvent(remoteData, LogStatus.Renamed, GetSrc(_sitecore.GetIconSrc(localData)), false);
+						this.UpdateStatistics(LogStatus.Renamed);
+					}
 					else if (results.IsTemplateChanged)
+					{
 						_logger.BeginEvent(remoteData, LogStatus.TemplateChange, GetSrc(_sitecore.GetIconSrc(localData)), false);
+						this.UpdateStatistics(LogStatus.TemplateChange);
+					}
 					else if (args.Overwrite)
+					{
 						_logger.BeginEvent(remoteData, LogStatus.Changed, GetSrc(_sitecore.GetIconSrc(localData)), false);
+						this.UpdateStatistics(LogStatus.Changed);
+					}
 					else
+					{
 						_logger.BeginEvent(remoteData, LogStatus.Skipped, GetSrc(_sitecore.GetIconSrc(localData)), false);
+						this.UpdateStatistics(LogStatus.Skipped);
+					}
 				}
 				else
+				{
 					_logger.BeginEvent(remoteData, LogStatus.Created, "", false);
+					this.UpdateStatistics(LogStatus.Created);
+				}
 			}
 			else
 			{
@@ -295,6 +317,7 @@ namespace ScsContentMigrator.Core
 				if (!args.Overwrite && localData != null)
 				{
 					_logger.BeginEvent(remoteData, LogStatus.Skipped, GetSrc(_sitecore.GetIconSrc(localData)), false);
+					this.UpdateStatistics(LogStatus.Skipped);
 					skip = true;
 				}
 				if (!skip && localData != null)
@@ -303,6 +326,7 @@ namespace ScsContentMigrator.Core
 					if (results.AreEqual)
 					{
 						_logger.BeginEvent(remoteData, LogStatus.Skipped, GetSrc(_sitecore.GetIconSrc(localData)), false);
+						this.UpdateStatistics(LogStatus.Skipped);
 						skip = true;
 					}
 				}
@@ -327,6 +351,7 @@ namespace ScsContentMigrator.Core
 						if (localData != null || !args.UseItemBlaster)
 						{
 							_logger.BeginEvent(remoteData, LogStatus.Changed, GetSrc(_sitecore.GetIconSrc(localData)), true);
+							this.UpdateStatistics(LogStatus.Changed);
 							_scDatastore.Save(remoteData);
 						}
 						else if (args.UseItemBlaster)
@@ -338,6 +363,7 @@ namespace ScsContentMigrator.Core
 							}
 							_logger.BeginEvent(remoteData, LogStatus.Created, $"/scs/platform/scsicon.scsvc?icon={icon}", false);
 							_logger.AddToLog($"{DateTime.Now:h:mm:ss tt} [Created] Staging creation of item using Data Blaster {remoteData.Name} - {remoteData.Id}");
+							this.UpdateStatistics(LogStatus.Created);
 							_itemsToCreate.Add(remoteData);
 						}
 						else
@@ -349,16 +375,19 @@ namespace ScsContentMigrator.Core
 					catch (TemplateMissingFieldException tm)
 					{
 						_logger.BeginEvent(new ErrorItemData() { Name = remoteData.Name, Path = tm.ToString() }, LogStatus.Warning, "", false);
+						this.UpdateStatistics(LogStatus.Warning);
 					}
 					catch (ParentItemNotFoundException)
 					{
-						_logger.BeginEvent(remoteData, LogStatus.SkippedParentError, "", false);
+						_logger.BeginEvent(remoteData, LogStatus.SkippedParentError, "", false);	
+						this.UpdateStatistics(LogStatus.SkippedParentError);
 						Errors.Add(remoteData.Id);
 					}
 					catch (Exception e)
 					{
 						Errors.Add(remoteData.Id);
 						_logger.BeginEvent(new ErrorItemData() { Name = remoteData?.Name ?? "Unknown item", Path = e.ToString() }, LogStatus.Error, "", false);
+						this.UpdateStatistics(LogStatus.Error);
 					}
 					if (localData != null)
 					{
@@ -369,8 +398,24 @@ namespace ScsContentMigrator.Core
 						else
 						{
 							_logger.BeginEvent(localData, LogStatus.Skipped, _logger.GetSrc(GetSrc(_sitecore.GetIconSrc(localData))), false);
+							this.UpdateStatistics(LogStatus.Skipped);
 						}
 					}
+				}
+			}
+		}
+
+		private void UpdateStatistics(string key)
+		{
+			lock (_locker)
+			{
+				if (this.OperationStatistics.ContainsKey(key))
+				{
+					this.OperationStatistics[key] = this.OperationStatistics[key] + 1;
+				}
+				else
+				{
+					this.OperationStatistics.Add(key, 1);
 				}
 			}
 		}

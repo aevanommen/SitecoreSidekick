@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using ScsContentMigrator.Args;
+﻿using System.Collections.Generic;
 using ScsContentMigrator.Models;
 
 namespace ScsContentMigrator.Core.Interface
@@ -8,6 +6,7 @@ namespace ScsContentMigrator.Core.Interface
 	public interface IContentMigration
 	{
 		ContentMigrationOperationStatus Status { get; }
+		IDictionary<string, int> Statistics { get; }
 		int ItemsInQueueToInstall { get;}
 		void CancelMigration();
 		void StartContentMigration(PullItemModel args);
