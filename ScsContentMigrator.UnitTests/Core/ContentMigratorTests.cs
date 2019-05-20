@@ -83,7 +83,7 @@ namespace ScsContentMigrator.UnitTests.Core
 
 			contentMigration.StartContentMigration(new PullItemModel { PullParent = false, RemoveLocalNotInRemote = true, Ids = new List<string> { Guid.NewGuid().ToString() } });
 
-			GetSubstitute<IContentItemInstaller>().Received(1).SetupTrackerForUnwantedLocalItems(Arg.Any<IEnumerable<Guid>>());
+			GetSubstitute<IContentItemInstaller>().Received(1).SetupTrackerForUnwantedLocalItems(Arg.Any<IEnumerable<Guid>>(), Arg.Any<IEnumerable<Guid>>(), Arg.Any<IEnumerable<Guid>>());
 		}
 
 		[Fact]

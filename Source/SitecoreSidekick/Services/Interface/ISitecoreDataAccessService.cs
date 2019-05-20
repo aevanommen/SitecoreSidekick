@@ -23,6 +23,7 @@ namespace SitecoreSidekick.Services.Interface
 		IItemData GetRootItemData(string database = null);
 		List<Guid> GetChildrenIds(Guid guid);
 		HashSet<Guid> GetSubtreeOfGuids(IEnumerable<Guid> rootIds);
+		HashSet<Guid> GetSubtreeOfGuids(IEnumerable<Guid> rootIds, IEnumerable<Guid> idsToExclude, IEnumerable<Guid> idsAndChildrenToExclude);
 		IEnumerable<string> GetVersions(IItemData itemData);
 		string GetIconSrc(IItemData item, int width = 32, int height = 32, string align = "", string margin = "");
 		string GetItemYaml(string idataId, Func<object, string> serializationFunc);

@@ -96,9 +96,9 @@ namespace ScsContentMigrator.Core
 
 		}
 
-		public void SetupTrackerForUnwantedLocalItems(IEnumerable<Guid> rootIds)
+		public void SetupTrackerForUnwantedLocalItems(IEnumerable<Guid> rootIds, IEnumerable<Guid> idsToExclude, IEnumerable<Guid> idsAndChildrenToExclude)
 		{
-			AllowedItems = new ConcurrentHashSet<Guid>(_sitecore.GetSubtreeOfGuids(rootIds));
+			AllowedItems = new ConcurrentHashSet<Guid>(_sitecore.GetSubtreeOfGuids(rootIds, idsToExclude, idsAndChildrenToExclude));
 		}
 
 		public bool Completed { get; private set; }
@@ -252,7 +252,10 @@ namespace ScsContentMigrator.Core
 		private void Finalize(int items, PullItemModel args)
 		{
 			if (args.RemoveLocalNotInRemote)
+			{
 				CleanUnwantedLocalItems();
+			}
+
 			Completed = true;
 			Status.FinishedTime = DateTime.Now;
 			Status.Completed = true;

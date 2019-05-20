@@ -51,7 +51,10 @@ namespace ScsContentMigrator.Core
 
 			if (model.RemoveLocalNotInRemote)
 			{
-				_installer.SetupTrackerForUnwantedLocalItems(model.Ids.Select(Guid.Parse));
+				_installer.SetupTrackerForUnwantedLocalItems(
+					model.Ids.Select(Guid.Parse),
+					model.IdsToExclude == null ? new Guid[] { } : model.IdsToExclude.Select(Guid.Parse),
+					model.IdsAndChildrenToExclude == null ? new Guid[] { } : model.IdsAndChildrenToExclude.Select(Guid.Parse));
 			}
 
 			_puller.StartGatheringItems(

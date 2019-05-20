@@ -100,18 +100,45 @@ namespace SitecoreSidekick.Services
 
 		public HashSet<Guid> GetSubtreeOfGuids(IEnumerable<Guid> rootIds)
 		{
+			return this.GetSubtreeOfGuids(rootIds, null, null);
+		}
+
+		public HashSet<Guid> GetSubtreeOfGuids(IEnumerable<Guid> rootIds, IEnumerable<Guid> idsToExclude, IEnumerable<Guid> idsAndChildrenToExclude)
+		{
+			if (idsToExclude == null)
+			{
+				idsToExclude = new Guid[] { };
+			}
+			
+			if (idsAndChildrenToExclude == null)
+			{
+				idsAndChildrenToExclude = new Guid[] { };
+			}
+
 			HashSet<Guid> ret = new HashSet<Guid>();
 			Stack<Item> processing = new Stack<Item>(rootIds.Select(x=>GetItem(x)));
 			while (processing.Any())
 			{
 				Item item = processing.Pop();
-				if (item == null) continue;
-				ret.Add(item.ID.Guid);
-				foreach (Item child in item.Children)
+				if (item == null)
 				{
-					processing.Push(child);
+					continue;
+				}
+
+				if (!idsAndChildrenToExclude.Contains(item.ID.Guid))
+				{
+					if (!idsToExclude.Contains(item.ID.Guid))
+					{
+						ret.Add(item.ID.Guid);
+					}
+
+					foreach (Item child in item.Children)
+					{
+						processing.Push(child);
+					}
 				}
 			}
+
 			return ret;
 		}
 

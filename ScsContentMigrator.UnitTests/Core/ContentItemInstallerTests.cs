@@ -55,7 +55,7 @@ namespace ScsContentMigrator.UnitTests.Core
 			var items = new[] {Guid.NewGuid(), Guid.NewGuid()};
 			GetSubstitute<ISitecoreDataAccessService>().GetSubtreeOfGuids(Arg.Any<IEnumerable<Guid>>()).Returns(new HashSet<Guid>(items));
 			var contentItemInstaller = CreateInstance<ContentItemInstaller>();
-			contentItemInstaller.SetupTrackerForUnwantedLocalItems(items);
+			contentItemInstaller.SetupTrackerForUnwantedLocalItems(items, new Guid[] { }, new Guid[] { });
 
 			contentItemInstaller.CleanUnwantedLocalItems();
 
@@ -68,7 +68,7 @@ namespace ScsContentMigrator.UnitTests.Core
 			var items = new[] { Guid.NewGuid(), Guid.NewGuid() };
 			GetSubstitute<ISitecoreDataAccessService>().GetSubtreeOfGuids(Arg.Any<IEnumerable<Guid>>()).Returns(new HashSet<Guid>(items));
 			var contentItemInstaller = CreateInstance<ContentItemInstaller>();
-			contentItemInstaller.SetupTrackerForUnwantedLocalItems(items);
+			contentItemInstaller.SetupTrackerForUnwantedLocalItems(items, new Guid[] { }, new Guid[] { });
 
 			contentItemInstaller.CleanUnwantedLocalItems();
 
@@ -82,7 +82,7 @@ namespace ScsContentMigrator.UnitTests.Core
 			GetSubstitute<ISitecoreDataAccessService>().GetSubtreeOfGuids(Arg.Any<IEnumerable<Guid>>()).Returns(new HashSet<Guid>(items));
 			GetSubstitute<ISitecoreDataAccessService>().When(sas=>sas.RecycleItem(Arg.Any<Guid>())).Throw(new Exception("Something bad happened"));
 			var contentItemInstaller = CreateInstance<ContentItemInstaller>();
-			contentItemInstaller.SetupTrackerForUnwantedLocalItems(items);
+			contentItemInstaller.SetupTrackerForUnwantedLocalItems(items, new Guid[] { }, new Guid[] { });
 
 			contentItemInstaller.CleanUnwantedLocalItems();
 

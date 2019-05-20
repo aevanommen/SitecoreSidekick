@@ -11,7 +11,7 @@ namespace ScsContentMigrator.Core.Interface
 	{
 		void StartInstallingItems(PullItemModel args, BlockingCollection<IItemData> itemsToInstall, int threads, CancellationToken cancellation);
 		void CleanUnwantedLocalItems();
-		void SetupTrackerForUnwantedLocalItems(IEnumerable<Guid> rootIds);
+		void SetupTrackerForUnwantedLocalItems(IEnumerable<Guid> rootIds, IEnumerable<Guid> idsToExclude, IEnumerable<Guid> idsAndChildrenToExclude);
 		bool Completed { get; }
 		IEnumerable<dynamic> GetItemLogEntries(int lineToStartFrom);
 		IEnumerable<string> GetAuditLogEntries(int lineToStartFrom);
